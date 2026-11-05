@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.78.1] - 2026-11-06
+
+### Changed
+
+- The CLI version now follows the Grok Bot version it targets, the same as [grok-bot-sdk](https://github.com/RongleCat/grok-bot-sdk). No functional changes from 0.3.0.
+
 ## [0.3.0] - 2026-11-05
 
 First public release of the command line and the `grok-bot` agent skill.

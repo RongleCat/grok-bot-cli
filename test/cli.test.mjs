@@ -149,7 +149,7 @@ test('version, help, and bad arguments use the JSON shape and exit codes', async
     assert.equal(await version.promise, 0);
     assert.deepEqual(version.io.json(), {
       ok: true,
-      version: '0.3.0',
+      version: '0.78.1',
       targetVersion: '0.78.1',
       runtime: runtime.name,
       runtimeVersion: formatRuntimeVersion(runtime.version),
@@ -158,7 +158,7 @@ test('version, help, and bad arguments use the JSON shape and exit codes', async
 
     const human = run(dir, ['--version']);
     assert.equal(await human.promise, 0);
-    assert.match(human.io.text(), /grok-bot 0\.3\.0/);
+    assert.match(human.io.text(), /grok-bot 0\.78\.1/);
     assert.match(human.io.text(), /grok-bot-target 0\.78\.1/);
     assert.match(human.io.text(), new RegExp(`runtime ${runtime.name} v`));
 

@@ -1,6 +1,6 @@
 # grok-bot commands
 
-CLI 0.3.0, Grok Bot protocol 0.78.1. Command lines and the exit-code list match `node dist/grok-bot.mjs --help` (same text as `skills/grok-bot/scripts/grok-bot --help`). Node and Bun print the same help. Run commands through the skill launcher, `scripts/grok-bot` (Windows: `scripts/grok-bot.cmd`). The launcher is not a second CLI. It only selects a runtime, checks `bin/SHA256SUMS`, and execs `bin/grok-bot.mjs`.
+CLI 0.78.1, Grok Bot protocol 0.78.1. Command lines and the exit-code list match `node dist/grok-bot.mjs --help` (same text as `skills/grok-bot/scripts/grok-bot --help`). Node and Bun print the same help. Run commands through the skill launcher, `scripts/grok-bot` (Windows: `scripts/grok-bot.cmd`). The launcher is not a second CLI. It only selects a runtime, checks `bin/SHA256SUMS`, and execs `bin/grok-bot.mjs`.
 
 An account is an alias. `--account <alias>` and `--profile <name>` are the same flag. Agent decisions are in `SKILL.md`. This file is the flag and JSON reference.
 
@@ -28,7 +28,7 @@ An alias is 1–64 characters of `[A-Za-z0-9_-]`, and it must start with a lette
 Human `--version` stdout is three lines. The runtime check in the next section runs first, so an unsupported runtime never prints this:
 
 ```text
-grok-bot 0.3.0
+grok-bot 0.78.1
 grok-bot-target 0.78.1
 runtime node v22.20.0
 ```
@@ -38,7 +38,7 @@ On Bun the third line is `runtime bun vX.Y.Z`. A newer CLI may change the first 
 `--version --json`:
 
 ```json
-{"ok":true,"version":"0.3.0","targetVersion":"0.78.1","runtime":"node","runtimeVersion":"v22.20.0"}
+{"ok":true,"version":"0.78.1","targetVersion":"0.78.1","runtime":"node","runtimeVersion":"v22.20.0"}
 ```
 
 `runtimeVersion` always has a leading `v`. `grok-bot status --version` prints the version and does not check login. It still loses to the runtime check.

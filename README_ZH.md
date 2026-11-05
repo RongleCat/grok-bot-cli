@@ -159,7 +159,7 @@ skills\grok-bot\scripts\grok-bot.cmd --version
 三行对上，就是这一版：
 
 ```text
-grok-bot 0.3.0
+grok-bot 0.78.1
 grok-bot-target 0.78.1
 runtime node v22.20.0
 ```

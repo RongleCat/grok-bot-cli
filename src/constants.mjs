@@ -1,4 +1,4 @@
-export const CLI_VERSION = '0.3.0';
+export const CLI_VERSION = '0.78.1';
 export const TARGET_VERSION = '0.78.1';
 // send --wait, each relay step, and wait. Login uses LOGIN_WAIT_SEC.
 export const DEFAULT_TIMEOUT_SEC = 600;

@@ -1,6 +1,6 @@
 {
   "name": "grok-bot-cli",
-  "version": "0.3.0",
+  "version": "0.78.1",
   "private": true,
   "description": "Command line and agent skill for your own Grok Bot accounts. One ESM file for Node.js 22.13+ or Bun 1.1+.",
   "license": "MIT",

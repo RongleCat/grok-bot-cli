@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // src/constants.mjs
-var CLI_VERSION = "0.3.0";
+var CLI_VERSION = "0.78.1";
 var TARGET_VERSION = "0.78.1";
 var DEFAULT_TIMEOUT_SEC = 600;
 var LOGIN_WAIT_SEC = 300;

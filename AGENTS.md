@@ -25,12 +25,12 @@ node scripts/check-skill-bin.mjs
 node skills/grok-bot/bin/grok-bot.mjs --version
 ```
 
-`--version` prints CLI `0.3.0` and target `0.78.1`. `check-skill-bin` requires `dist/grok-bot.mjs` and `skills/grok-bot/bin/grok-bot.mjs` to be the same bytes, and both `SHA256SUMS` files to match that hash.
+`--version` prints CLI `0.78.1` and target `0.78.1`. `check-skill-bin` requires `dist/grok-bot.mjs` and `skills/grok-bot/bin/grok-bot.mjs` to be the same bytes, and both `SHA256SUMS` files to match that hash.
 
 A release tag `vX.Y.Z` needs a `## [X.Y.Z]` section in `CHANGELOG.md`. Preview it with:
 
 ```bash
-node scripts/changelog-for-release.mjs v0.3.0
+node scripts/changelog-for-release.mjs v0.78.1
 node scripts/pack-skill.mjs /tmp/grok-bot-cli-release
 ```
 

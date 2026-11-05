@@ -159,7 +159,7 @@ skills\grok-bot\scripts\grok-bot.cmd --version
 Three lines, then you are on the right build:
 
 ```text
-grok-bot 0.3.0
+grok-bot 0.78.1
 grok-bot-target 0.78.1
 runtime node v22.20.0
 ```

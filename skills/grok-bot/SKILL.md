@@ -10,7 +10,7 @@ description: >
 
 # grok-bot
 
-`grok-bot` talks to the user's own Grok Bot accounts. This CLI is 0.3.0 and targets protocol 0.78.1. The program is one JavaScript file shipped inside this skill. It does not embed a runtime. Agents pass `--json` on every account command and branch on the process exit code. Logs and progress go to stderr. Flags, JSON keys, and error codes are in [references/commands.md](references/commands.md). Read that file before the first command other than version, help, `status`, `accounts list`, or the login steps below.
+`grok-bot` talks to the user's own Grok Bot accounts. This CLI is 0.78.1 and targets protocol 0.78.1. The program is one JavaScript file shipped inside this skill. It does not embed a runtime. Agents pass `--json` on every account command and branch on the process exit code. Logs and progress go to stderr. Flags, JSON keys, and error codes are in [references/commands.md](references/commands.md). Read that file before the first command other than version, help, `status`, `accounts list`, or the login steps below.
 
 中文：这是用户自己的账号。登录必须用户在浏览器里批准。发消息、以及下面的 `relay`，都是以用户身份对外发言。
 
@@ -60,7 +60,7 @@ Do not try to repair the file. Tell the user this skill copy is damaged.
 A usable version command exits 0 and prints three lines. The third line is the runtime that actually started the file:
 
 ```text
-grok-bot 0.3.0
+grok-bot 0.78.1
 grok-bot-target 0.78.1
 runtime node v22.20.0
 ```

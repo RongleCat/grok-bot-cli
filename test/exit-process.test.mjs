@@ -101,7 +101,7 @@ test('a child process keeps exit code 5 and a large JSON document on a pipe and 
         env: childEnv(dir),
       });
       assert.equal(version.code, 0, `${runtime.name} version stderr=${version.stderr}`);
-      assert.match(version.stdout, /grok-bot 0\.3\.0/);
+      assert.match(version.stdout, /grok-bot 0\.78\.1/);
 
       const usage = await spawnCollected(runtime.command, runtimeArgs(runtime, { preload: false, args: ['--json'] }), {
         env: childEnv(dir),
