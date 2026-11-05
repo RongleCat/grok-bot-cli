@@ -1,0 +1,35 @@
+# Push and pull request checks. Mocked tests only. No real account.
+name: ci
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / Node ${{ matrix.node-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node-version: ["22"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Skill bin matches dist
+        run: node scripts/check-skill-bin.mjs
+      - uses: oven-sh/setup-bun@v2
+      - name: Bun version smoke
+        shell: bash
+        run: bun skills/grok-bot/bin/grok-bot.mjs --version

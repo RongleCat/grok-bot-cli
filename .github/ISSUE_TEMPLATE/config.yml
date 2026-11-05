@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: grok-bot-sdk
+    url: https://github.com/RongleCat/grok-bot-sdk
+    about: Protocol library this CLI bundles
+  - name: Grok App
+    url: https://github.com/RongleCat/grok-app
+    about: Desktop workbench for the local Grok Build CLI
+  - name: Author on X
+    url: https://x.com/cgnot996
+    about: 铁柱AGI @cgnot996

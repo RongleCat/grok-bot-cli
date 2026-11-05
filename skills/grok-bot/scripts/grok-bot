@@ -1,0 +1,344 @@
+#!/bin/sh
+# Launch bin/grok-bot.mjs from this skill.
+# Prefer Node.js 22.13+ on PATH, then Bun. If neither is present, install
+# Bun into the user directory (BUN_INSTALL or $HOME/.bun) and exec that binary.
+# Progress goes to stderr so --json keeps stdout for the CLI.
+
+set -u
+
+want_json=0
+for arg in "$@"; do
+  if [ "$arg" = "--json" ]; then
+    want_json=1
+  fi
+done
+
+json_escape() {
+  # No sed: a minimal PATH still has to emit valid JSON.
+  s=$1
+  out=
+  while [ -n "$s" ]; do
+    rest=${s#?}
+    c=${s%"$rest"}
+    case $c in
+      \\) out=$out\\\\ ;;
+      \") out=$out\\\" ;;
+      *) out=$out$c ;;
+    esac
+    s=$rest
+  done
+  printf '%s' "$out"
+}
+
+fail() {
+  code=$1
+  message=$2
+  printf '%s: %s\n' "$code" "$message" >&2
+  if [ "$want_json" -eq 1 ]; then
+    printf '{"ok":false,"error":{"code":"%s","message":"%s"}}\n' "$code" "$(json_escape "$message")"
+  fi
+  exit 3
+}
+
+manual_hints() {
+  cat >&2 <<'EOF'
+Install Node.js 22 LTS (22.13 or newer) or Bun, then run this command again.
+Node.js:
+  macOS:   brew install node
+  Windows: winget install OpenJS.NodeJS.LTS
+  Linux:   distro package, nvm, or fnm
+  https://nodejs.org/en/download
+Bun (user directory, no administrator):
+  macOS/Linux: curl -fsSL https://bun.sh/install | bash
+  Windows:     powershell -c "irm bun.sh/install.ps1 | iex"
+  https://bun.sh
+EOF
+}
+
+version_requested() {
+  for arg in "$@"; do
+    case $arg in
+      --version|-V|version) return 0 ;;
+    esac
+  done
+  return 1
+}
+
+version_ge_22_13() {
+  ver=$1
+  major=0
+  minor=0
+  patch=0
+  case $ver in
+    *.*.*)
+      major=${ver%%.*}
+      rest=${ver#*.}
+      minor=${rest%%.*}
+      patch=${rest#*.}
+      ;;
+    *.*)
+      major=${ver%%.*}
+      minor=${ver#*.}
+      patch=0
+      ;;
+    *)
+      major=$ver
+      minor=0
+      patch=0
+      ;;
+  esac
+  major=${major%%[!0-9]*}
+  minor=${minor%%[!0-9]*}
+  patch=${patch%%[!0-9]*}
+  [ -n "$major" ] || return 1
+  [ -n "$minor" ] || minor=0
+  [ -n "$patch" ] || patch=0
+  if [ "$major" -gt 22 ]; then return 0; fi
+  if [ "$major" -lt 22 ]; then return 1; fi
+  if [ "$minor" -gt 13 ]; then return 0; fi
+  if [ "$minor" -lt 13 ]; then return 1; fi
+  return 0
+}
+
+command_path() {
+  bin=$(command -v "$1" 2>/dev/null) || return 1
+  [ -n "$bin" ] || return 1
+  [ -x "$bin" ] || return 1
+  printf '%s\n' "$bin"
+}
+
+node_is_new_enough() {
+  bin=$1
+  ver=$("$bin" --version 2>/dev/null) || return 1
+  ver=$(printf '%s\n' "$ver" | sed -n '1p')
+  ver=${ver#v}
+  ver=${ver%%[!0-9.]*}
+  version_ge_22_13 "$ver"
+}
+
+node_path_if_ok() {
+  bin=$(command_path node) || return 1
+  node_is_new_enough "$bin" || return 1
+  printf '%s\n' "$bin"
+}
+
+# Print the Bun prefix. Does not export and does not exit the parent shell,
+# because callers use this inside command substitution.
+bun_root() {
+  if [ -n "${BUN_INSTALL:-}" ]; then
+    printf '%s\n' "$BUN_INSTALL"
+    return 0
+  fi
+  if [ -n "${HOME:-}" ]; then
+    printf '%s\n' "$HOME/.bun"
+    return 0
+  fi
+  return 1
+}
+
+bun_default_path() {
+  root=$(bun_root) || return 1
+  if [ -x "$root/bin/bun" ]; then
+    printf '%s\n' "$root/bin/bun"
+    return 0
+  fi
+  if [ -x "$root/bin/bun.exe" ]; then
+    printf '%s\n' "$root/bin/bun.exe"
+    return 0
+  fi
+  return 1
+}
+
+install_bun() {
+  if [ "${GROK_BOT_NO_AUTO_INSTALL:-}" = "1" ]; then
+    printf '%s\n' "grok-bot: automatic install is off (GROK_BOT_NO_AUTO_INSTALL=1)." >&2
+    manual_hints
+    fail RUNTIME_INSTALL_FAILED "Automatic install is off (GROK_BOT_NO_AUTO_INSTALL=1). Install Node.js 22.13 or newer, or Bun 1.1 or newer. See stderr for commands."
+  fi
+  if [ -z "${BUN_INSTALL:-}" ]; then
+    if [ -z "${HOME:-}" ]; then
+      manual_hints
+      fail RUNTIME_INSTALL_FAILED "HOME is not set, so Bun cannot be installed into a user directory. See stderr for commands."
+    fi
+    BUN_INSTALL=$HOME/.bun
+    export BUN_INSTALL
+  fi
+  export BUN_INSTALL
+  if ! command -v unzip >/dev/null 2>&1; then
+    printf '%s\n' "grok-bot: unzip is not on PATH. The Bun installer needs unzip." >&2
+    manual_hints
+    fail RUNTIME_INSTALL_FAILED "Bun was not installed because unzip is not on PATH. Install unzip and retry, or install a runtime manually. See stderr."
+  fi
+  if ! command -v bash >/dev/null 2>&1; then
+    printf '%s\n' "grok-bot: bash is not on PATH. The Bun installer is a bash script." >&2
+    manual_hints
+    fail RUNTIME_INSTALL_FAILED "Bun was not installed because bash was not found. See stderr for manual install commands."
+  fi
+  installer=$(mktemp "${TMPDIR:-/tmp}/grok-bot-bun.XXXXXX") || {
+    manual_hints
+    fail RUNTIME_INSTALL_FAILED "Could not create a temp file for the Bun installer. See stderr for manual install commands."
+  }
+  printf '%s\n' "grok-bot: installing Bun into ${BUN_INSTALL} (user directory, no administrator). This needs network and can take a while." >&2
+  fetch_status=1
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL https://bun.sh/install -o "$installer"
+    fetch_status=$?
+  elif command -v wget >/dev/null 2>&1; then
+    printf '%s\n' "grok-bot: curl is not on PATH. Downloading the Bun installer with wget." >&2
+    wget -qO "$installer" https://bun.sh/install
+    fetch_status=$?
+  else
+    rm -f "$installer"
+    printf '%s\n' "grok-bot: neither curl nor wget is on PATH." >&2
+    manual_hints
+    fail RUNTIME_INSTALL_FAILED "Bun was not installed because neither curl nor wget is on PATH. See stderr for manual install commands."
+  fi
+  if [ "$fetch_status" -ne 0 ] || [ ! -s "$installer" ]; then
+    rm -f "$installer"
+    printf '%s\n' "grok-bot: downloading https://bun.sh/install failed." >&2
+    manual_hints
+    fail RUNTIME_INSTALL_FAILED "The Bun installer download failed. See stderr for manual Node.js 22 LTS or Bun commands."
+  fi
+  # bash's own stdout is the installer's progress. Keep it off the CLI's stdout.
+  bash "$installer" >&2
+  install_status=$?
+  rm -f "$installer"
+  installer=
+  if [ "$install_status" -ne 0 ]; then
+    printf '%s\n' "grok-bot: the Bun installer exited ${install_status}." >&2
+    manual_hints
+    fail RUNTIME_INSTALL_FAILED "The Bun installer failed. See stderr for the installer output and for manual Node.js 22 LTS or Bun commands."
+  fi
+  if ! bun_default_path >/dev/null; then
+    printf '%s\n' "grok-bot: the installer finished but bun was not found under ${BUN_INSTALL}/bin." >&2
+    manual_hints
+    fail RUNTIME_INSTALL_FAILED "The Bun installer finished, but the bun binary was not found. See stderr for manual install commands."
+  fi
+}
+
+# Print one lowercase hex digest, or return 2 when no hash tool exists.
+hash_hex() {
+  target=$1
+  line=
+  if command -v shasum >/dev/null 2>&1; then
+    line=$(shasum -a 256 "$target" 2>/dev/null) || return 1
+    printf '%s\n' "$line" | awk 'NR==1 { print $1; exit }'
+    return 0
+  fi
+  if command -v sha256sum >/dev/null 2>&1; then
+    line=$(sha256sum "$target" 2>/dev/null) || return 1
+    printf '%s\n' "$line" | awk 'NR==1 { print $1; exit }'
+    return 0
+  fi
+  if command -v certutil >/dev/null 2>&1; then
+    line=$(certutil -hashfile "$target" SHA256 2>/dev/null | sed -n '2p') || return 1
+    printf '%s\n' "$line" | tr -d ' \r'
+    return 0
+  fi
+  return 2
+}
+
+verify_checksum() {
+  if [ ! -f "$mjs" ] || [ ! -f "$sums" ]; then
+    fail CLI_CHECKSUM_MISMATCH "grok-bot.mjs or SHA256SUMS is missing from the skill bin directory."
+  fi
+  if ! command -v shasum >/dev/null 2>&1 && ! command -v sha256sum >/dev/null 2>&1 && ! command -v certutil >/dev/null 2>&1; then
+    if version_requested "$@"; then
+      printf '%s\n' "grok-bot: skipped the SHA-256 check; shasum, sha256sum, and certutil were not found." >&2
+    fi
+    return 0
+  fi
+  expected=$(sed -n '1p' "$sums" | awk '{ print $1; exit }' | tr -d '\r')
+  actual=$(hash_hex "$mjs")
+  tool_status=$?
+  if [ "$tool_status" -ne 0 ]; then
+    fail CLI_CHECKSUM_MISMATCH "grok-bot.mjs could not be hashed."
+  fi
+  expected_lc=$(printf '%s' "$expected" | tr 'A-F' 'a-f')
+  actual_lc=$(printf '%s' "$actual" | tr -d ' \r' | tr 'A-F' 'a-f')
+  if [ -z "$expected_lc" ] || [ "$expected_lc" != "$actual_lc" ]; then
+    fail CLI_CHECKSUM_MISMATCH "grok-bot.mjs does not match SHA256SUMS."
+  fi
+}
+
+resolve_script_dir() {
+  target=$1
+  case $target in
+    /*) ;;
+    *) target=$(pwd)/$target ;;
+  esac
+  n=0
+  while [ -L "$target" ]; do
+    n=$((n + 1))
+    if [ "$n" -gt 20 ]; then
+      printf '%s\n' "grok-bot: too many symlinks resolving the launcher." >&2
+      return 1
+    fi
+    parent=$(CDPATH= cd -- "$(dirname -- "$target")" && pwd) || return 1
+    if ! command -v readlink >/dev/null 2>&1; then
+      printf '%s\n' "grok-bot: readlink is required to follow the symlink $target" >&2
+      return 1
+    fi
+    link=$(readlink "$target") || return 1
+    case $link in
+      /*) target=$link ;;
+      *) target=$parent/$link ;;
+    esac
+  done
+  CDPATH= cd -P -- "$(dirname -- "$target")" && pwd -P
+}
+
+script_dir=$(resolve_script_dir "$0") || fail RUNTIME_INSTALL_FAILED "Could not resolve the launcher path."
+bin_dir=$(CDPATH= cd -P -- "$script_dir/../bin" && pwd -P) || fail CLI_CHECKSUM_MISMATCH "The skill bin directory is missing."
+mjs=$bin_dir/grok-bot.mjs
+sums=$bin_dir/SHA256SUMS
+
+verify_checksum "$@"
+
+chosen=
+case ${GROK_BOT_RUNTIME:-} in
+  '')
+    chosen=$(node_path_if_ok) || chosen=
+    if [ -z "$chosen" ]; then
+      chosen=$(command_path bun) || chosen=
+    fi
+    if [ -z "$chosen" ]; then
+      chosen=$(bun_default_path) || chosen=
+    fi
+    if [ -z "$chosen" ]; then
+      install_bun
+      chosen=$(bun_default_path) || chosen=
+    fi
+    ;;
+  node)
+    chosen=$(command_path node) || chosen=
+    if [ -z "$chosen" ]; then
+      printf '%s\n' "grok-bot: GROK_BOT_RUNTIME=node but node is not on PATH." >&2
+      manual_hints
+      fail RUNTIME_INSTALL_FAILED "GROK_BOT_RUNTIME=node but node was not found on PATH. See stderr for install commands."
+    fi
+    ;;
+  bun)
+    chosen=$(command_path bun) || chosen=
+    if [ -z "$chosen" ]; then
+      chosen=$(bun_default_path) || chosen=
+    fi
+    if [ -z "$chosen" ]; then
+      install_bun
+      chosen=$(bun_default_path) || chosen=
+    fi
+    ;;
+  *)
+    printf '%s\n' "grok-bot: GROK_BOT_RUNTIME must be node or bun." >&2
+    fail RUNTIME_INSTALL_FAILED "GROK_BOT_RUNTIME must be node or bun."
+    ;;
+esac
+
+if [ -z "$chosen" ]; then
+  manual_hints
+  fail RUNTIME_INSTALL_FAILED "No supported JavaScript runtime is available. See stderr for Node.js 22 LTS and Bun install commands."
+fi
+
+exec "$chosen" "$mjs" "$@"
+printf '%s\n' "grok-bot: failed to start $chosen" >&2
+exit 3

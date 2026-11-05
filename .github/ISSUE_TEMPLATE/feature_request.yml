@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest an idea for grok-bot-cli
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The CLI follows the Grok Bot 0.78.1 desktop protocol and only wraps calls the protocol already has.
+        There is no command to edit a bot's instructions, and destructive commands stay a dry run until `--yes`.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What are you trying to do with your own accounts?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Commands, exit codes, or a redacted `--json` sample. No tokens.

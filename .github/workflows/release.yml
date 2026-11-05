@@ -1,0 +1,40 @@
+# Tag v* builds the agent skill zip and uploads it to the GitHub Release.
+# The release body is the matching CHANGELOG section.
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  skill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: node scripts/check-skill-bin.mjs
+      - name: Release notes from CHANGELOG
+        run: node scripts/changelog-for-release.mjs "${GITHUB_REF_NAME}" > release-notes.md
+      - name: Pack skill zip
+        run: node scripts/pack-skill.mjs release
+      - uses: softprops/action-gh-release@v2
+        with:
+          body_path: release-notes.md
+          files: |
+            release/tiezhu-grok-bot-skill.zip
+            release/SHA256SUMS.txt
+          fail_on_unmatched_files: true

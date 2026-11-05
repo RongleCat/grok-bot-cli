@@ -1,0 +1,38 @@
+{
+  "name": "grok-bot-cli",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Command line and agent skill for your own Grok Bot accounts. One ESM file for Node.js 22.13+ or Bun 1.1+.",
+  "license": "MIT",
+  "type": "module",
+  "author": "铁柱AGI (https://x.com/cgnot996)",
+  "homepage": "https://github.com/RongleCat/grok-bot-cli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RongleCat/grok-bot-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/RongleCat/grok-bot-cli/issues"
+  },
+  "keywords": [
+    "grok",
+    "grok-bot",
+    "cli",
+    "agent",
+    "skill"
+  ],
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "start": "node src/main.mjs",
+    "build": "node scripts/build.mjs",
+    "check:bundle": "node scripts/check-skill-bin.mjs",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "grok-bot-sdk": "0.78.1"
+  }
+}
