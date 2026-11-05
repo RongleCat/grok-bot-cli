@@ -24,12 +24,12 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
+      - uses: oven-sh/setup-bun@v2
       - run: npm ci
       - run: npm test
       - run: npm run build
       - name: Skill bin matches dist
         run: node scripts/check-skill-bin.mjs
-      - uses: oven-sh/setup-bun@v2
       - name: Bun version smoke
         shell: bash
         run: bun skills/grok-bot/bin/grok-bot.mjs --version

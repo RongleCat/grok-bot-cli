@@ -213,7 +213,7 @@ test('migration registers profile files without reading or rewriting credentials
     assert.equal(registry.accounts[0].addedAt, NOW_ISO);
     assert.equal(JSON.stringify(registry).includes('token-default'), false);
     assert.equal(JSON.stringify(registry).includes('identityHash'), false);
-    assert.equal((await stat(join(dir, 'accounts.json'))).mode & 0o777, 0o600);
+    if (process.platform !== 'win32') assert.equal((await stat(join(dir, 'accounts.json'))).mode & 0o777, 0o600);
     assert.equal(await readFile(saved.file, 'utf8'), saved.body);
     assert.equal(await readFile(work.file, 'utf8'), work.body);
 

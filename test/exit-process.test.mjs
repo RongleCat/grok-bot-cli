@@ -5,7 +5,7 @@ import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const CLI_ROOT = fileURLToPath(new URL('..', import.meta.url));
 const MAIN = join(CLI_ROOT, 'src', 'main.mjs');
@@ -65,7 +65,7 @@ function childEnv(dir, fixture) {
 
 function runtimeArgs(runtime, { preload, args }) {
   const prefix = preload
-    ? (runtime.name === 'bun' ? ['--preload', PRELOAD] : ['--import', PRELOAD])
+    ? (runtime.name === 'bun' ? ['--preload', PRELOAD] : ['--import', pathToFileURL(PRELOAD).href])
     : [];
   return [...prefix, MAIN, ...args];
 }

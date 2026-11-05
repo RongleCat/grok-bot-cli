@@ -229,7 +229,7 @@ test('status without credentials exits 2 and does not call the network', async (
     const body = status.io.json();
     assert.equal(body.ok, false);
     assert.equal(body.error.code, 'NOT_LOGGED_IN');
-    assert.match(body.error.credentialPath, /profiles\/default\.json$/);
+    assert.match(body.error.credentialPath, /profiles[\\/]default\.json$/);
     assert.equal(status.calls.length, 0);
     assert.equal(status.io.err.join(''), '');
   });
@@ -254,7 +254,7 @@ test('two-step login stores mode 0600 credentials and never prints tokens', asyn
     assert.equal(Number.isNaN(Date.parse(startBody.expiresAt)), false);
     const pendingPath = join(dir, 'profiles', 'default.pending.json');
     const pending = JSON.parse(await readFile(pendingPath, 'utf8'));
-    assert.equal((await stat(pendingPath)).mode & 0o777, 0o600);
+    if (process.platform !== 'win32') assert.equal((await stat(pendingPath)).mode & 0o777, 0o600);
     assert.equal(started.io.text().includes(pending.verifier), false);
     assert.equal(started.io.err.join('').includes(pending.verifier), false);
 
@@ -273,7 +273,7 @@ test('two-step login stores mode 0600 credentials and never prints tokens', asyn
     assert.equal(saved.accessToken, ACCESS);
     assert.equal(saved.refreshToken, REFRESH);
     assert.equal(saved.selectedTeamId, 7);
-    assert.equal((await stat(savedPath)).mode & 0o777, 0o600);
+    if (process.platform !== 'win32') assert.equal((await stat(savedPath)).mode & 0o777, 0o600);
     await assert.rejects(stat(pendingPath), /ENOENT/);
     const printed = `${waited.io.text()}\n${waited.io.err.join('')}`;
     assert.equal(printed.includes(ACCESS), false);
@@ -736,7 +736,7 @@ test('a 401 refreshes the stored token once and does not print either token', as
     const stored = JSON.parse(await readFile(file, 'utf8'));
     assert.equal(stored.accessToken, newToken);
     assert.equal(stored.refreshToken, 'rotated-refresh-token');
-    assert.equal((await stat(file)).mode & 0o777, 0o600);
+    if (process.platform !== 'win32') assert.equal((await stat(file)).mode & 0o777, 0o600);
     const printed = `${status.io.text()}\n${status.io.err.join('')}`;
     assert.equal(printed.includes(oldToken), false);
     assert.equal(printed.includes(newToken), false);
